@@ -1,0 +1,96 @@
+- Cursor am Ende, vorausgehend: Vorschläge
+    - Nichts: a)
+    - Operator
+        - Binäre: b)
+        - Unäre: b)
+    - Primitive
+        - Zahl: d)
+        - Variable d)
+    - Klammer zu
+        - eckig (Array): c)
+        - rund
+            - Zeitreihe c)
+            - Funktion c)
+
+- Cursor mittendrin:
+    - umgeben von Klammern: 
+        - Klammerausdruck
+        - Funktion
+    - hinter einem Operator
+    - in einem Operator. zB <<
+    - in einer Zahl
+    - in einem Symbol
+    - in einer Funktion
+
+    [- umgeben von "": Signaleingabe ->Ignorieren, da durch 'in Funktion Signal an Stelle 1 gedeckt]
+    - 
+
+Vorschläge:
+    a) Alle Funktionen
+    b) Alle Funktionen mit bestimmtem Rückgabedatentyp
+    c) Methoden auf bestimmtem Datentyp
+    d) Operatoren auf bestimmtem Datentyp
+    e) Zeitreihe
+
+Datentyp eines Tokens:
+- enthält Zeitreihe? ->Zeitreihe
+- 
+- Wenn ein '+' eingegeben wird, müssem Vorschläge auf den Datentyp des ersten Summanden beschränkt sein
+
+- Bin ich gerade innerhalb eines Tokens oder zwischen Tokens?
+- "ich befinde mich in dern Klammern von FUnktion X an Argument 2 to be expected 'Number'
+- get LHS: benötigt immer einen Operator als Ausgangspunkt, z.B: bei '+' muss man über '*' hinweggehen bis zum Stop
+- gibt es verschiedene Valid Stops pro Operator?
+    '+': (, func
+
+Tasks:
+- finde Datentyp von LHSs von Operatoren
+
+
+Decision Tree cursor: Left of me is...
+- nothing: suggest any funtion or timeseries or array
+
+- an operator (or part of an operator)
+    Left of the operator is...
+        - a valid datatype: suggest valid datatype functions
+        - not a valid datatype: no suggestion
+
+- a letter: suggest function
+
+- a number: no nothing
+
+- a boolean: suggest boll operator
+
+- a comma
+
+
+Suggestions vor 
+    - RHS of Operator
+    - Function Arguments
+    - Nothing before
+    - Functionparts
+    - Methods
+
+GetScope(){
+    return{
+        inside function brakets
+            PopulateFunction
+        right/inside of letters
+            ...later...
+        right of operator (or insideOperator)
+            
+        right of nothing
+        right of dot as method caller
+        right of dot as decimal
+        right of number
+    }
+}
+
+PopulateFunction(){
+
+}
+
+GetDatatype(Context)
+
+MakeSuggestionForDatainput(Datatype, letters = null)
+MakeSuggestionForMethod(OnDatatype)

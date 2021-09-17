@@ -26,11 +26,13 @@ module.exports = {
         'green-500': 'rgb(86,195,94)', //'rgb(68,160,68)',
         'green-600': 'rgb(66,127,66)',
       },
-      backgroundColor: ['active'],
+
     },
   },
   variants: {
-    extend: {},
+    extend: {
+      backgroundColor: ['active'],
+    },
   },
   plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography')],
 }

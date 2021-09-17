@@ -1,5 +1,5 @@
 <template>
-  <div class="p-5 h-screen mx-auto max-w-2xl">
+  <div class="p-5 h-screen mx-auto max-w-4xl">
     <div class="text-blue-400 font-bold mb-2">aivis Formula Editor</div>
     <expression-input
       class="mb-2 w-full"
@@ -8,6 +8,7 @@
       @update:modelValue="userInput"
       @focusout="focusout"
     ></expression-input>
+
     <div class="text-red-400 mb-2">{{ errorMsg }}</div>
     <pre
       class="
@@ -22,12 +23,33 @@
       "
       >{{ JSON.stringify(expressionObj, null, "\t") }}</pre
     >
+    <div>LHS: {{ lhs }}</div>
+
+    <!--TESTING-->
+    <input
+      type="button"
+      class="
+        fixed
+        right-4
+        bottom-4
+        px-4
+        py-2
+        border border-gray-400
+        rounded-md
+        hover:bg-gray-200
+        active:bg-gray-300
+        cursor-pointer
+      "
+      value="Test"
+      @click="test"
+    />
   </div>
 </template>
 
 <script>
 import ExpressionInput from "./components/ExpressionInput.vue";
 import { parse } from "mathjs";
+import { suggestor } from "./modules/suggestor";
 
 export default {
   name: "App",
@@ -36,28 +58,32 @@ export default {
   },
   data() {
     return {
-      expression: "(1+1)*sig_1",
+      expression: "", //'(s("sig_2")+s("sig_1", 1000))/2',
       expressionObj: {},
       errorMsg: null,
       suggestions: null,
+      lhs: null,
     };
   },
 
   created() {
-    this.analyzeExpression(this.expression);
+    //this.analyzeExpression(this.expression);
+    //this.makeSuggestions();
   },
 
   methods: {
-    userInput(value, cursorStart, cursorEnd, triggerType) {
-      console.log(cursorStart, cursorEnd, triggerType);
+    test() {
+      console.log(suggestor.test(".slice()", 7));
+    },
+
+    userInput(expr, cursorStart, cursorEnd, triggerType) {
+      let newInput = triggerType === "input";
 
       //detect input change
-      if (triggerType === "input") {
-        this.analyzeExpression();
-      }
+      if (newInput) this.analyzeExpression();
 
       //make suggestions
-      this.makeSuggestions(cursorStart, cursorEnd);
+      this.makeSuggestions(cursorStart, cursorEnd, newInput);
     },
 
     analyzeExpression() {
@@ -70,14 +96,13 @@ export default {
       }
     },
 
-    makeSuggestions(cursorStart, cursorEnd) {
-      if (cursorStart !== cursorEnd) return; //no suggestions for selections
-      let lastCharacter =
-        cursorStart >= 1
-          ? this.expression.substring(cursorStart - 1, cursorStart)
-          : null;
-      console.log(lastCharacter);
-      this.suggestions = { test: "test" };
+    makeSuggestions(cursorStart = 0, cursorEnd = 0, newInput = false) {
+      this.suggestions = suggestor.update(
+        this.expression,
+        cursorStart,
+        cursorEnd,
+        newInput
+      );
     },
 
     focusout() {
