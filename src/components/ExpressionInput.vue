@@ -1,10 +1,13 @@
 <template>
   <div class="relative inline-block text-left mb-12">
+    <!--Blocking layer-->
     <div
-      v-if="suggestions !== null"
-      class="fixed left-0 top-0 h-full w-full z-10"
+      v-show="showAssistant"
+      class="fixed left-0 top-0 h-full w-full z-10 bg-black bg-opacity-50"
       @click="$emit('focusout')"
     ></div>
+
+    <!--Expression Input-->
     <input
       class="
         z-20
@@ -19,7 +22,7 @@
         rounded-t-md
       "
       :class="{
-        'rounded-b-md': suggestions === null,
+        'rounded-b-md': !showAssistant,
       }"
       :ref="'expressionInput'"
       :value="modelValue"
@@ -34,6 +37,8 @@
     <div class="text-gray-400 text-xs font-semibold absolute right-1 -top-6">
       Cursor position: {{ cursor }}
     </div>
+
+    <!--Assistant-->
     <transition
       enter-active-class="transition ease-out duration-100"
       enter-from-class="transform opacity-0 scale-95"
@@ -42,70 +47,134 @@
       leave-from-class="transform opacity-100 scale-100"
       leave-to-class="transform opacity-0 scale-95"
     >
-      <!--Container-->
+      <!--Assistant Container-->
       <div
-        v-if="suggestions !== null"
+        v-if="showAssistant"
         class="
-          origin-top-right
           absolute
           top-10
           left-0
           z-10
           mt-0
-          h-56
+          h-72
           w-full
           rounded-b-md
           shadow-lg
           bg-white
-          ring-1 ring-black ring-opacity-5
-          divide-y divide-gray-100
-          focus:outline-none
           overflow-hidden
-          flex
         "
       >
-        <!--Selection-->
+        <!--currentFunction fill assistant-->
         <div
-          class="
-            w-56
-            h-full
-            overflow-y-auto
-            bg-white
-            ring-1 ring-black ring-opacity-5
-            divide-y divide-gray-100
-            focus:outline-none
-          "
+          class="w-full p-4 overflow-y-auto bg-blue-50 border-b"
+          :class="{
+            'h-1/3': splitHeight,
+            'h-full': !splitHeight,
+          }"
+          v-if="assistant.currentFunction !== null"
+        >
+          <div class="text-lg font-semibold">
+            {{ assistant.currentFunction.name }}
+          </div>
+          <pre
+            class="my-2 text-gray-900"
+            v-html="getFunctionString(assistant.currentFunction)"
+          ></pre>
+          <div class="mb-2">{{ assistant.currentFunction.description }}</div>
+          <div
+            v-for="(arg, index) in assistant.currentFunction.args"
+            :key="'arg' + index"
+            class="mb-2"
+          >
+            <em>@param </em>
+            <span
+              :class="{ 'font-semibold': !arg.current, bold: arg.current }"
+              >{{ arg.name }}</span
+            >{{ arg.optional ? " (optional)" : "" }} -
+            {{ arg.description }}
+          </div>
+        </div>
+
+        <!--Suggestions assistant: Functions-->
+        <div
+          v-if="assistant.requiredDataType !== 'signalid'"
+          class="grid grid-cols-5"
+          :class="{
+            'h-2/3': splitHeight,
+            'h-full': !splitHeight,
+          }"
+        >
+          <div class="col-span-1 h-full overflow-y-auto bg-white">
+            <div
+              v-for="(suggestion, index) in assistant.suggestions"
+              :key="suggestion.key"
+              :ref="'suggested-item-' + index"
+              class="px-4 py-1.5 cursor-default"
+              @mouseover="selected = index"
+              @click="suggestionSelected"
+              :class="{
+                'bg-blue-100': index === selected,
+              }"
+            >
+              {{ suggestion.name }}
+            </div>
+          </div>
+
+          <!--Documentation-->
+          <div
+            class="col-span-4 h-full p-4 overflow-y-auto text-sm bg-gray-100"
+            v-if="selectedSuggestion !== null"
+          >
+            <div class="text-lg font-semibold">
+              {{ selectedSuggestion.name }}
+            </div>
+            <pre
+              class="my-2 text-gray-900"
+              v-html="getFunctionString(selectedSuggestion)"
+            ></pre>
+            <div class="mb-2">
+              {{ selectedSuggestion.description }}
+            </div>
+            <div
+              v-for="(arg, index) in selectedSuggestion.args"
+              :key="'arg' + index"
+              class="mb-2"
+            >
+              <em>@param</em> <span class="font-semibold">{{ arg.name }}</span
+              >{{ arg.optional ? " (optional)" : "" }} -
+              {{ arg.description }}
+            </div>
+          </div>
+        </div>
+
+        <!--Suggestions assistant: Signals-->
+        <div
+          v-if="assistant.requiredDataType === 'signalid'"
+          class="overflow-y-auto"
+          :class="{
+            'h-2/3': splitHeight,
+            'h-full': !splitHeight,
+          }"
         >
           <div
-            v-for="(suggestion, index) in suggestions"
-            :key="suggestion.key"
-            :ref="'suggested-item-' + index"
-            class="px-4 py-2 cursor-default"
+            v-for="(signal, index) in assistant.suggestions"
+            :key="signal.id"
+            :ref="'suggested-signal-' + index"
+            class="bg-white px-4 py-1.5 cursor-default grid grid-cols-5"
             @mouseover="selected = index"
             @click="suggestionSelected"
             :class="{
               'bg-blue-100': index === selected,
             }"
           >
-            {{ suggestion.name }}
-          </div>
-        </div>
-
-        <!--Documentation-->
-        <div class="w-full h-full p-4 overflow-y-auto text-sm">
-          <div class="text-lg font-semibold">
-            {{ suggestions[selected].name }}
-          </div>
-          <pre class="my-2 text-gray-900">{{ functionString }}</pre>
-          <div class="mb-2">{{ suggestions[selected].description }}</div>
-          <div
-            v-for="(arg, index) in suggestions[selected].args"
-            :key="'arg' + index"
-            class="mb-2"
-          >
-            <em>@param</em> <span class="font-semibold">{{ arg.name }}</span
-            >{{ arg.optional ? " (optional)" : "" }} -
-            {{ arg.description }}
+            <div class="col-span-2 overflow-ellipsis">{{ signal.id }}</div>
+            <div class="col-span-1 overflow-ellipsis">{{ signal.type }}</div>
+            <div class="col-span-1 overflow-ellipsis">
+              {{ signal.unitName }}
+            </div>
+            <div class="col-span-1 overflow-ellipsis">
+              {{ signal.unitSymbol }}
+            </div>
           </div>
         </div>
       </div>
@@ -114,16 +183,19 @@
 </template>
 
 <script>
-import { suggestor } from "../modules/suggestor";
+import { assistant } from "../modules/assistant";
 
 export default {
   name: "ExpressionInput",
 
   props: {
     modelValue: String,
-    suggestions: {
+    assistant: {
       type: Object,
-      default: null,
+      default: {
+        currentFunction: null,
+        suggestions: null,
+      },
     },
   },
 
@@ -138,25 +210,23 @@ export default {
   },
 
   computed: {
-    functionString() {
-      //returns like "function parseInt(string: string, radix?: number): number"
+    selectedSuggestion() {
+      return this.assistant.suggestions === null
+        ? null
+        : this.assistant.suggestions[this.selected];
+    },
 
-      //get selected suggestion
-      let sug = this.suggestions[this.selected];
-
-      //create string
-      let arr = [];
-      sug.args.forEach((arg) => {
-        arr.push(arg.name + (arg.optional ? "?" : "") + ": " + arg.type);
-      });
+    showAssistant() {
       return (
-        sug.type +
-        " " +
-        sug.key +
-        "(" +
-        arr.join(", ") +
-        "): " +
-        sug.returns.type
+        this.assistant.suggestions !== null ||
+        this.assistant.currentFunction !== null
+      );
+    },
+
+    splitHeight() {
+      return (
+        this.assistant.suggestions !== null &&
+        this.assistant.currentFunction !== null
       );
     },
   },
@@ -165,7 +235,7 @@ export default {
     arrowEvent(type) {
       if (type === "down")
         this.selected =
-          this.selected == this.suggestions.length - 1
+          this.selected == this.assistant.suggestions.length - 1
             ? this.selected
             : this.selected + 1;
       else this.selected = this.selected == 0 ? 0 : this.selected - 1;
@@ -176,12 +246,41 @@ export default {
       console.log("down");
     },
 
+    getFunctionString(fct) {
+      //returns like "function parseInt(string: string, radix?: number): number"
+      let activeArgument = fct.hasOwnProperty("currentArgument")
+        ? fct.currentArgument
+        : -1;
+      let boldFunction =
+        fct.hasOwnProperty("currentArgument") && activeArgument == -1;
+
+      //create string
+      let arr = [];
+      fct.args.forEach((arg, index) => {
+        let argString = arg.name + (arg.optional ? "?" : "") + ": " + arg.type;
+        arr.push(
+          index == activeArgument ? "<b>" + argString + "</b>" : argString
+        );
+      });
+      return (
+        (boldFunction ? "<b>" : "") +
+        fct.suggestionType +
+        " " +
+        fct.key +
+        (boldFunction ? "</b>" : "") +
+        "(" +
+        arr.join(", ") +
+        "): " +
+        fct.returns.type
+      );
+    },
+
     suggestionSelected() {
-      let suggestion = this.suggestions[this.selected];
+      let suggestion = this.assistant.suggestions[this.selected];
 
       //insert suggestion into expression
-      let inserted = suggestor.insert(this.modelValue, suggestion, this.cursor);
-
+      let inserted = assistant.insert(this.modelValue, suggestion, this.cursor);
+      console.log("inserted", inserted);
       //Set cursor
       this.cursor = inserted.cursor;
       setTimeout(

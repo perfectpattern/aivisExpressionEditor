@@ -1,5 +1,12 @@
+import json from '/test/metadata.json'
+
 function get() {
-    return ['sig1', 'sig2', 'sig3'];
+    let data = [];
+    json.columnSettings.forEach(signal => {
+        signal.suggestionType = 'signal';
+        data.push(signal);
+    });
+    return (data);
 }
 
 export const testSignals = {

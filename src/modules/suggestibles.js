@@ -193,7 +193,7 @@ function getList(type, filter = {}) {
             for (var key in suggestiblesArchive.functions) {
                 let fc = suggestiblesArchive.functions[key];
                 fc['key'] = key;
-                fc['type'] = 'function';
+                fc['suggestionType'] = 'function';
                 filteredFunctions.push(fc);
             }
             return filteredFunctions;
@@ -215,5 +215,5 @@ function getList(type, filter = {}) {
 
 export const suggestibles = {
     getList: getList,
-    get: get
+    get: get,
 }

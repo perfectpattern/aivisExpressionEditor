@@ -4,9 +4,9 @@
     <expression-input
       class="mb-2 w-full"
       v-model="expression"
-      :suggestions="suggestions"
+      :assistant="assistant"
       @update:modelValue="userInput"
-      @focusout="focusout"
+      @focusout="resetAssistant"
     ></expression-input>
 
     <div class="text-red-400 mb-2">{{ errorMsg }}</div>
@@ -49,7 +49,7 @@
 <script>
 import ExpressionInput from "./components/ExpressionInput.vue";
 import { parse } from "mathjs";
-import { suggestor } from "./modules/suggestor";
+import { assistant } from "./modules/assistant";
 
 export default {
   name: "App",
@@ -61,29 +61,33 @@ export default {
       expression: "", //'(s("sig_2")+s("sig_1", 1000))/2',
       expressionObj: {},
       errorMsg: null,
-      suggestions: null,
+      assistant: {
+        currentFunction: null,
+        suggestions: null,
+      },
       lhs: null,
     };
   },
 
   created() {
     //this.analyzeExpression(this.expression);
-    //this.makeSuggestions();
+    //this.updateAssistant();
   },
 
   methods: {
     test() {
-      console.log(suggestor.test(".slice()", 7));
+      console.log(assistant.test(".slice()", 7));
     },
 
     userInput(expr, cursorStart, cursorEnd, triggerType) {
+      this.resetAssistant();
       let newInput = triggerType === "input";
 
       //detect input change
       if (newInput) this.analyzeExpression();
 
       //make suggestions
-      this.makeSuggestions(cursorStart, cursorEnd, newInput);
+      this.updateAssistant(cursorStart, cursorEnd, newInput);
     },
 
     analyzeExpression() {
@@ -96,8 +100,8 @@ export default {
       }
     },
 
-    makeSuggestions(cursorStart = 0, cursorEnd = 0, newInput = false) {
-      this.suggestions = suggestor.update(
+    updateAssistant(cursorStart = 0, cursorEnd = 0, newInput = false) {
+      this.assistant = assistant.update(
         this.expression,
         cursorStart,
         cursorEnd,
@@ -105,8 +109,11 @@ export default {
       );
     },
 
-    focusout() {
-      this.suggestions = null;
+    resetAssistant() {
+      this.assistant = {
+        currentFunction: null,
+        suggestions: null,
+      };
     },
   },
 };
