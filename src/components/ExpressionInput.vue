@@ -30,8 +30,8 @@
       @input="emit($event, 'input')"
       @click="emit($event, 'click')"
       @keydown.tab="$emit('focusout')"
-      @keydown.down="arrowEvent('down')"
-      @keydown.up="arrowEvent('up')"
+      @keydown.down="arrowEvent($event, 'down')"
+      @keydown.up="arrowEvent($event, 'up')"
       @keydown.enter="suggestionSelected"
     />
     <div class="text-gray-400 text-xs font-semibold absolute right-1 -top-6">
@@ -49,7 +49,7 @@
     >
       <!--Assistant Container-->
       <div
-        v-if="showAssistant"
+        v-if="mode !== 'hidden'"
         class="
           absolute
           top-10
@@ -64,118 +64,51 @@
           overflow-hidden
         "
       >
-        <!--currentFunction fill assistant-->
+        <!--current function String-->
         <div
-          class="w-full p-4 overflow-y-auto bg-blue-50 border-b"
-          :class="{
-            'h-1/3': splitHeight,
-            'h-full': !splitHeight,
-          }"
-          v-if="assistant.currentFunction !== null"
+          class="
+            w-full
+            p-4
+            overflow-y-auto
+            bg-blue-50
+            border-b border-gray-300
+            h-1/5
+          "
+          v-if="mode === 'documentation' || mode === 'argSuggestions'"
         >
-          <div class="text-lg font-semibold">
-            {{ assistant.currentFunction.name }}
-          </div>
           <pre
-            class="my-2 text-gray-900"
+            class="text-gray-900"
             v-html="getFunctionString(assistant.currentFunction)"
           ></pre>
-          <div class="mb-2">{{ assistant.currentFunction.description }}</div>
-          <div
-            v-for="(arg, index) in assistant.currentFunction.args"
-            :key="'arg' + index"
-            class="mb-2"
-          >
-            <em>@param </em>
-            <span
-              :class="{ 'font-semibold': !arg.current, bold: arg.current }"
-              >{{ arg.name }}</span
-            >{{ arg.optional ? " (optional)" : "" }} -
-            {{ arg.description }}
-          </div>
         </div>
 
-        <!--Suggestions assistant: Functions-->
+        <!--Documentation and suggestions-->
         <div
-          v-if="assistant.requiredDataType !== 'signalid'"
-          class="grid grid-cols-5"
           :class="{
-            'h-2/3': splitHeight,
-            'h-full': !splitHeight,
+            'h-4/5': mode === 'documentation' || mode === 'argSuggestions',
+            'h-full': mode === 'suggestions',
           }"
         >
-          <div class="col-span-1 h-full overflow-y-auto bg-white">
-            <div
-              v-for="(suggestion, index) in assistant.suggestions"
-              :key="suggestion.key"
-              :ref="'suggested-item-' + index"
-              class="px-4 py-1.5 cursor-default"
-              @mouseover="selected = index"
-              @click="suggestionSelected"
-              :class="{
-                'bg-blue-100': index === selected,
-              }"
-            >
-              {{ suggestion.name }}
-            </div>
-          </div>
-
           <!--Documentation-->
-          <div
-            class="col-span-4 h-full p-4 overflow-y-auto text-sm bg-gray-100"
-            v-if="selectedSuggestion !== null"
-          >
-            <div class="text-lg font-semibold">
-              {{ selectedSuggestion.name }}
-            </div>
-            <pre
-              class="my-2 text-gray-900"
-              v-html="getFunctionString(selectedSuggestion)"
-            ></pre>
-            <div class="mb-2">
-              {{ selectedSuggestion.description }}
-            </div>
-            <div
-              v-for="(arg, index) in selectedSuggestion.args"
-              :key="'arg' + index"
-              class="mb-2"
-            >
-              <em>@param</em> <span class="font-semibold">{{ arg.name }}</span
-              >{{ arg.optional ? " (optional)" : "" }} -
-              {{ arg.description }}
-            </div>
-          </div>
-        </div>
+          <documentation
+          class="p-4"
+            :fct="assistant.currentFunction"
+            :showFunctionString="false"
+            v-if="mode === 'documentation'"
+          />
 
-        <!--Suggestions assistant: Signals-->
-        <div
-          v-if="assistant.requiredDataType === 'signalid'"
-          class="overflow-y-auto"
-          :class="{
-            'h-2/3': splitHeight,
-            'h-full': !splitHeight,
-          }"
-        >
-          <div
-            v-for="(signal, index) in assistant.suggestions"
-            :key="signal.id"
-            :ref="'suggested-signal-' + index"
-            class="bg-white px-4 py-1.5 cursor-default grid grid-cols-5"
-            @mouseover="selected = index"
-            @click="suggestionSelected"
-            :class="{
-              'bg-blue-100': index === selected,
-            }"
-          >
-            <div class="col-span-2 overflow-ellipsis">{{ signal.id }}</div>
-            <div class="col-span-1 overflow-ellipsis">{{ signal.type }}</div>
-            <div class="col-span-1 overflow-ellipsis">
-              {{ signal.unitName }}
-            </div>
-            <div class="col-span-1 overflow-ellipsis">
-              {{ signal.unitSymbol }}
-            </div>
-          </div>
+          <!--Suggestions-->
+          <suggestions
+            v-if="mode === 'suggestions' || mode === 'argSuggestions'"
+            :suggestions="assistant.suggestions"
+            :type="
+              assistant.requiredDataType === 'signalid'
+                ? 'signals'
+                : 'functions'
+            "
+            v-model:selected="selected"
+            @selected="suggestionSelected"
+          />
         </div>
       </div>
     </transition>
@@ -184,9 +117,16 @@
 
 <script>
 import { assistant } from "../modules/assistant";
+import Documentation from "./Documentation.vue";
+import Suggestions from "./Suggestions.vue";
 
 export default {
   name: "ExpressionInput",
+
+  components: {
+    Documentation,
+    Suggestions,
+  },
 
   props: {
     modelValue: String,
@@ -210,12 +150,6 @@ export default {
   },
 
   computed: {
-    selectedSuggestion() {
-      return this.assistant.suggestions === null
-        ? null
-        : this.assistant.suggestions[this.selected];
-    },
-
     showAssistant() {
       return (
         this.assistant.suggestions !== null ||
@@ -229,17 +163,36 @@ export default {
         this.assistant.currentFunction !== null
       );
     },
+
+    mode() {
+      //can be hidden, suggestions, documentation, argSuggestions
+      let s = this.assistant.suggestions;
+      let f = this.assistant.currentFunction;
+      if (s === null && f === null) return "hidden";
+      else if (s !== null && f === null) return "suggestions";
+      else if (s === null && f !== null) return "documentation";
+      else return "argSuggestions";
+    },
   },
 
   methods: {
-    arrowEvent(type) {
-      if (type === "down")
+    arrowEvent(event, type) {
+      if (this.assistant.suggestions === null) return;
+
+      //down arrow
+      if (type === "down") {
+        event.preventDefault();
         this.selected =
           this.selected == this.assistant.suggestions.length - 1
             ? this.selected
             : this.selected + 1;
-      else this.selected = this.selected == 0 ? 0 : this.selected - 1;
-      this.$refs["suggested-item-" + this.selected].scrollIntoView();
+      }
+
+      //up arrow
+      if (type === "up") {
+        event.preventDefault();
+        this.selected = this.selected == 0 ? 0 : this.selected - 1;
+      }
     },
 
     down() {
@@ -280,7 +233,7 @@ export default {
 
       //insert suggestion into expression
       let inserted = assistant.insert(this.modelValue, suggestion, this.cursor);
-      console.log("inserted", inserted);
+
       //Set cursor
       this.cursor = inserted.cursor;
       setTimeout(

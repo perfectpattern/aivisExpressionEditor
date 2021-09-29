@@ -1,4 +1,3 @@
-import { exp, parse, evaluate } from "mathjs";
 import { helpers } from "./helpers";
 import { expressionHelpers } from "./expressionHelpers";
 import { suggestibles } from "./suggestibles";
@@ -60,12 +59,25 @@ function update(expression, cursorStart, cursorEnd, newInput) {
     //get cursors lhs of expression
     let lhs = expression.substring(0, cursorPos).trim(); //get left hand side
 
-    //expression ends with operator
+    //lhs of expression ends with operator
     let operator = expressionHelpers.trailingOperator(lhs);
     if (operator !== null) {
+        let datatype = expressionHelpers.getDatatype(lhs.substring(0, lhs.length - operator.operator.length));
+        console.log(datatype);
         return {
             currentFunction: null,
             suggestions: suggestibles.getList('functions'),
+            requiredDataType: null,
+        };
+    }
+
+    //lhs of expression ends with dot
+    if (lhs.substring(lhs.length - 1) === '.') {
+        let datatype = expressionHelpers.getDatatype(lhs.substring(0, lhs.length - 1));
+        console.log(datatype);
+        return {
+            currentFunction: null,
+            suggestions: suggestibles.getList('methods'),
             requiredDataType: null,
         };
     }

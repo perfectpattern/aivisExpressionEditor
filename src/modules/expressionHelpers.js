@@ -1,4 +1,4 @@
-import { min } from "mathjs";
+import { exp, parse, evaluate } from "mathjs";
 import { helpers } from "./helpers";
 
 function checkInsideParenthesis(expression, checkForFunction = true) {
@@ -70,8 +70,17 @@ function endsInsideFunctionParenthesis(expression) {
     return null;
 }
 
+function getDatatype(expression) {
+    let node = parseRecursively(expression);
+    if (node === null) return null;
+    else return {
+        identifier: node.getIdentifier(),
+        content: node.getContent()
+    }
+}
+
 function getLetterBlock(expression, cursorPos) {
-    console.log('checking', expression);
+    //console.log('checking', expression);
     //returns the letterblock the cursor is currently in
     let patt = /[a-z]{1,20}/gm;
     let match = expression.match(patt);
@@ -104,7 +113,7 @@ function insert(expression, suggestion, cursor) {
             let indexOfBracket = splitExp[1].indexOf(")");
 
             let index = (indexoOfKomma >= 0 && indexOfBracket >= 0) ? Math.min(indexoOfKomma, indexOfBracket) : indexoOfKomma >= 0 ? indexoOfKomma : indexOfBracket;
-            console.log('indexoOfKomma', indexoOfKomma, 'indexOfBracket', indexOfBracket, 'index', index);
+            //console.log('indexoOfKomma', indexoOfKomma, 'indexOfBracket', indexOfBracket, 'index', index);
             let lead = splitExp[0].substring(0, splitExp[0].lastIndexOf("(") + 1);
             let tail = splitExp[1].substring(index);
             console.log('lead', lead, 'tail', tail);
@@ -125,62 +134,13 @@ function insert(expression, suggestion, cursor) {
 
 function parseRecursively(expression) {
     //trys parsing the expression recursively, removing the first character each time
-    if (expression.length == 0) return null; //no valid lhs found
+    if (expression.length == 0) return null;
     try {
-        let node = parse(expression);
-        //if (this.isAllowedLHS(operator, node))
-        //return "\"" + node.getContent() + "\" -> " + node.getIdentifier() + " Datatype: " + this.getDatatype(node);
-        //return this.getLeftHandToken(expression.substring(1));
-        return {
-            identifier: node.getIdentifier(),
-            content: node.getContent()
-        }
+        return parse(expression);
     } catch (e) {
-        //console.log(JSON.stringify(e.message));
-        return this.getLeftHandToken(expression.substring(1));
+        return parseRecursively(expression.substring(1));
     }
 }
-
-/*function stepBackwards(expression, target, braker, skipWhiteSpace = true) {
-    //steps backwards in the expression starting form cursorPos and checks if target or braker was found
-    let cursorPos = expression.length;
-
-    while (cursorPos > 0) {
-        let character = expression.substring(cursorPos - 1, cursorPos);
-        let remainingExpression = expression.substring(0, cursorPos - 1);
-
-        if (character === " ") continue; //skip white space
-
-        //Find target
-        if (character === target) {
-            return {
-                success: true,
-                targetAt: cursorPos,
-                brakerAt: -1,
-                remainingExpression: remainingExpression,
-            }
-        }
-
-        //Find braker
-        if (character === braker) {
-            return {
-                success: false,
-                targetAt: -1,
-                brakerAt: cursorPos,
-                remainingExpression: remainingExpression,
-            }
-        }
-
-        cursorPos--;
-    }
-
-    return {
-        success: false,
-        targetAt: -1,
-        brakerAt: -1,
-        remainingExpression: null,
-    }
-}*/
 
 function trailingOperator(expression) {
     expression = expression.trim();
@@ -203,11 +163,10 @@ function trailingOperator(expression) {
 }
 
 export const expressionHelpers = {
-    endsInsideFunctionParenthesis: endsInsideFunctionParenthesis,
     checkInsideParenthesis: checkInsideParenthesis,
+    endsInsideFunctionParenthesis: endsInsideFunctionParenthesis,
+    getDatatype: getDatatype,
     getLetterBlock: getLetterBlock,
     insert: insert,
-    parseRecursively: parseRecursively,
-    //stepBackwards: stepBackwards,
     trailingOperator: trailingOperator,
 }

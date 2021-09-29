@@ -1,4 +1,4 @@
-let suggestiblesArchive = {
+let archive = {
     functions: {
         abs: {
             name: 'abs',
@@ -179,7 +179,7 @@ let array = {
 function get(type, key) {
     //console.log('suggestibles.get asked for', type, key);
     let categoryKey = type + "s"; //just the plural of e.g. 'method'
-    if (suggestiblesArchive[categoryKey].hasOwnProperty(key)) return suggestiblesArchive[categoryKey][key];
+    if (archive[categoryKey].hasOwnProperty(key)) return archive[categoryKey][key];
     return null;
 }
 
@@ -190,8 +190,8 @@ function getList(type, filter = {}) {
             var contains = filter.hasOwnProperty('contains') ? filter.contains : null;
             var tags = filter.hasOwnProperty('tags') ? filter.tags : [];
             let filteredFunctions = [];
-            for (var key in suggestiblesArchive.functions) {
-                let fc = suggestiblesArchive.functions[key];
+            for (var key in archive.functions) {
+                let fc = archive.functions[key];
                 fc['key'] = key;
                 fc['suggestionType'] = 'function';
                 filteredFunctions.push(fc);
@@ -202,9 +202,14 @@ function getList(type, filter = {}) {
             var datatype = filter.hasOwnProperty('datatype') ? filter.datatype : 'timeseries';
             var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*';
             var contains = filter.hasOwnProperty('contains') ? filter.contains : null;
-            let methods = [];
-            //TODO
-            return methods;
+            let filteredMethods = [];
+            for (var key in archive.methods) {
+                let fc = archive.methods[key];
+                fc['key'] = key;
+                fc['suggestionType'] = 'method';
+                filteredMethods.push(fc);
+            }
+            return filteredMethods;
 
         case 'array':
             break;
