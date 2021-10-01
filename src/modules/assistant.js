@@ -18,26 +18,6 @@ function determineDatatype(token) {
     return null;
 }
 
-function getDatatype(node) { //boolean, numeric, timeseries, array
-    node.traverse(function (node, path, parent) {
-        switch (node.type) {
-            case 'OperatorNode':
-                console.log(node.type, node.op)
-                break
-            case 'ConstantNode':
-                console.log(node.type, node.value)
-                break
-            case 'SymbolNode':
-                console.log(node.type, node.name)
-                break
-            case 'FunctionNode':
-                console.log(node.type, node.name)
-                break
-            default:
-                console.log(node.type)
-        }
-    })
-}
 
 function insert(expression, suggestion, cursor) {
     return expressionHelpers.insert(expression, suggestion, cursor);
@@ -62,8 +42,10 @@ function update(expression, cursorStart, cursorEnd, newInput) {
     //lhs of expression ends with operator
     let operator = expressionHelpers.trailingOperator(lhs);
     if (operator !== null) {
-        let datatype = expressionHelpers.getDatatype(lhs.substring(0, lhs.length - operator.operator.length));
-        console.log(datatype);
+        lhs = lhs.substring(0, lhs.length - operator.operator.length); //cut the operator from the end
+        let node = expressionHelpers.parseRecursively(lhs); //parse node recursively from expression
+        let evaluated = expressionHelpers.evaluate(node); //evaluate datatype
+        console.log(evaluated);
         return {
             currentFunction: null,
             suggestions: suggestibles.getList('functions'),
@@ -73,8 +55,10 @@ function update(expression, cursorStart, cursorEnd, newInput) {
 
     //lhs of expression ends with dot
     if (lhs.substring(lhs.length - 1) === '.') {
-        let datatype = expressionHelpers.getDatatype(lhs.substring(0, lhs.length - 1));
-        console.log(datatype);
+        lhs = lhs.substring(0, lhs.length - 1);
+        let node = expressionHelpers.parseRecursively(lhs); //parse node recursively from expression
+        let evaluated = expressionHelpers.evaluate(node); //evaluate datatype
+        console.log(evaluated);
         return {
             currentFunction: null,
             suggestions: suggestibles.getList('methods'),

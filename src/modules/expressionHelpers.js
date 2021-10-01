@@ -1,4 +1,4 @@
-import { exp, parse, evaluate } from "mathjs";
+import { exp, parse } from "mathjs";
 import { helpers } from "./helpers";
 
 function checkInsideParenthesis(expression, checkForFunction = true) {
@@ -70,14 +70,58 @@ function endsInsideFunctionParenthesis(expression) {
     return null;
 }
 
-function getDatatype(expression) {
+function evaluate(node) {
+    //evaluates and verifies a node recursively
+    if (node === null) return null;
+    if (node.isNode) {
+        let identifier = node.getIdentifier();
+
+        //Parenthesis
+        if (identifier === 'ParenthesisNode') return evaluate(node.getContent())
+
+
+        return { "evaluated": node.isFunctionNode };
+    }
+
+
+    /*switch (node.getIdentifier().split(':')[0]) {
+        case 'FunctionNode':
+            let functionName = node.getIdentifier().split(':')[1];
+
+            break;
+
+        case 'SymbolNode':
+            let symbolName = node.getIdentifier().split(':')[1];
+
+        default:
+            break;
+    }
+
+    node.traverse(function (node, path, parent) {
+        switch (node.type) {
+            case 'OperatorNode':
+                console.log(node.type, node.op)
+                break
+            case 'ConstantNode':
+                console.log(node.type, node.value)
+                break
+            case 'SymbolNode':
+                console.log(node.type, node.name)
+                break
+            case 'FunctionNode':
+                console.log(node.type, node.name)
+                break
+            default:
+                console.log(node.type)
+        }
+    })*/
+}
+
+/*function getDatatype(expression) {
     let node = parseRecursively(expression);
     if (node === null) return null;
-    else return {
-        identifier: node.getIdentifier(),
-        content: node.getContent()
-    }
-}
+    return evaluateDatatype(node);
+}*/
 
 function getLetterBlock(expression, cursorPos) {
     //console.log('checking', expression);
@@ -165,7 +209,8 @@ function trailingOperator(expression) {
 export const expressionHelpers = {
     checkInsideParenthesis: checkInsideParenthesis,
     endsInsideFunctionParenthesis: endsInsideFunctionParenthesis,
-    getDatatype: getDatatype,
+    evaluate: evaluate,
+    parseRecursively: parseRecursively,
     getLetterBlock: getLetterBlock,
     insert: insert,
     trailingOperator: trailingOperator,

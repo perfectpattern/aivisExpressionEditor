@@ -21,28 +21,21 @@
         max-h-96
         overflow-y-auto
       "
-      >{{ JSON.stringify(expressionObj, null, "\t") }}</pre
+      >{{ JSON.stringify(node, null, "\t") }}</pre
     >
-    <div>LHS: {{ lhs }}</div>
-
-    <!--TESTING-->
-    <input
-      type="button"
+    <pre
       class="
-        fixed
-        right-4
-        bottom-4
-        px-4
-        py-2
-        border border-gray-400
+        mb-2
+        bg-white
+        p-4
+        border border-gray-200
         rounded-md
-        hover:bg-gray-200
-        active:bg-gray-300
-        cursor-pointer
+        text-sm text-gray-600
+        max-h-96
+        overflow-y-auto
       "
-      value="Test"
-      @click="test"
-    />
+      >{{ JSON.stringify(evaluated, null, "\t") }}</pre
+    >
   </div>
 </template>
 
@@ -50,6 +43,7 @@
 import ExpressionInput from "./components/ExpressionInput.vue";
 import { parse } from "mathjs";
 import { assistant } from "./modules/assistant";
+import { expressionHelpers } from "./modules/expressionHelpers";
 
 export default {
   name: "App",
@@ -58,27 +52,23 @@ export default {
   },
   data() {
     return {
-      expression: "", //'(s("sig_2")+s("sig_1", 1000))/2',
-      expressionObj: {},
+      expression: '(2/((1+s("sig_1", 1000))/2))',
+      node: {},
+      evaluated: {},
       errorMsg: null,
       assistant: {
         currentFunction: null,
         suggestions: null,
       },
-      lhs: null,
     };
   },
 
   created() {
-    //this.analyzeExpression(this.expression);
+    this.analyzeExpression(this.expression);
     //this.updateAssistant();
   },
 
   methods: {
-    test() {
-      console.log(assistant.test(".slice()", 7));
-    },
-
     userInput(expr, cursorStart, cursorEnd, triggerType) {
       this.resetAssistant();
       let newInput = triggerType === "input";
@@ -87,16 +77,18 @@ export default {
       if (newInput) this.analyzeExpression();
 
       //make suggestions
-      this.updateAssistant(cursorStart, cursorEnd, newInput);
+      //this.updateAssistant(cursorStart, cursorEnd, newInput);
     },
 
     analyzeExpression() {
       try {
-        this.expressionObj = parse(this.expression);
+        this.node = parse(this.expression);
+        this.evaluated = expressionHelpers.evaluate(this.node); //evaluate datatype
         this.errorMsg = null;
       } catch (e) {
         this.errorMsg = JSON.stringify(e.message);
-        this.expressionObj = {};
+        this.node = {};
+        this.evaluated = {};
       }
     },
 
