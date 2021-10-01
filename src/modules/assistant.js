@@ -82,8 +82,22 @@ function update(expression, cursorStart, cursorEnd, newInput) {
         };
     }
 
+    //cursor is inside a function or method name
+    var res = expressionHelpers.getLetterBlock(expression, cursorPos);
+    if (res !== null) {
+        let fct = suggestibles.get(res.type, res.key);
+        if (fct !== null) {  //check if function exists
+            fct["currentArgument"] = -1;
+            return {
+                currentFunction: fct,
+                suggestions: null,
+                requiredDataType: null,
+            };
+        }
+    }
+
     //cursor is inside function or method parenthesis
-    let res = expressionHelpers.endsInsideFunctionParenthesis(lhs);
+    var res = expressionHelpers.endsInsideFunctionParenthesis(lhs);
     if (res !== null) {
         let fct = suggestibles.get(res.type, res.key); //check if function exists
         if (fct !== null) {
@@ -93,20 +107,6 @@ function update(expression, cursorStart, cursorEnd, newInput) {
                 currentFunction: fct,
                 suggestions: requiredDataType === 'signalid' ? testSignals.get() : suggestibles.getList('functions'),
                 requiredDataType: requiredDataType,
-            };
-        }
-    }
-
-    //cursor is inside a function or method name
-    res = expressionHelpers.getLetterBlock(expression, cursorPos);
-    if (res !== null) {
-        let fct = suggestibles.get(res.type, res.key);
-        if (fct !== null) {  //check if function exists
-            fct["currentArgument"] = -1;
-            return {
-                currentFunction: fct,
-                suggestions: null,
-                requiredDataType: null,
             };
         }
     }
