@@ -1,23 +1,6 @@
-import { helpers } from "./helpers";
 import { expressionHelpers } from "./expressionHelpers";
 import { suggestibles } from "./suggestibles";
 import { testSignals } from "./testSignals";
-
-function isAllowedLHS(operator, node) {
-    return true;
-    switch (operator) {
-        case "+":
-            return !['OperatorNode:add'].includes(node.getIdentifier());
-
-        default:
-            return false;
-    }
-}
-
-function determineDatatype(token) {
-    return null;
-}
-
 
 function insert(expression, suggestion, cursor) {
     return expressionHelpers.insert(expression, suggestion, cursor);

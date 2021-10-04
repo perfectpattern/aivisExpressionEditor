@@ -52,7 +52,7 @@ export default {
   },
   data() {
     return {
-      expression: '(2/((1+s("sig_1", 1000))/2))',
+      expression: '(2/((1+s("sig_1", 1000))/2))', //'(2).abs(4)'
       node: {},
       evaluated: {},
       errorMsg: null,
@@ -65,7 +65,7 @@ export default {
 
   created() {
     this.analyzeExpression(this.expression);
-    //this.updateAssistant();
+    this.updateAssistant();
   },
 
   methods: {
@@ -77,7 +77,7 @@ export default {
       if (newInput) this.analyzeExpression();
 
       //make suggestions
-      //this.updateAssistant(cursorStart, cursorEnd, newInput);
+      this.updateAssistant(cursorStart, cursorEnd, newInput);
     },
 
     analyzeExpression() {

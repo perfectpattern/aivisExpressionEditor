@@ -1,5 +1,7 @@
 import { exp, parse } from "mathjs";
 import { helpers } from "./helpers";
+import { suggestibles } from "./suggestibles";
+import { operations } from "./operations";
 
 function checkInsideParenthesis(expression, checkForFunction = true) {
     //I am inside a parenthesis if, going backwards, I find an opening parenthesis (function: with a leading letter), which was not closed before
@@ -70,8 +72,34 @@ function endsInsideFunctionParenthesis(expression) {
     return null;
 }
 
+function getMethodDatatype(methodKey, datatypeResponse) {
+    //check datatype of (datatypeResponse.datatype).methodKey
+    //error
+    if (datatypeResponse.error) return datatypeResponse;
+
+    //get method specs
+    let spec = suggestibles.get('method', methodKey);
+
+    //error: method unknown
+    if (spec === null) return { error: true, errorMsg: "Unknown method: " + methodKey, datatype: null };
+
+    //error: method not allowed on datatype
+    if (!spec.on.includes(datatypeResponse.datatype)) return { error: true, errorMsg: "Method '" + methodKey + "' not allowed for datatype '" + datatypeResponse.datatype + "'", datatype: null };
+
+    //success
+    return { error: false, errorMsg: "", datatype: spec.returns.type }; //TODO
+}
+
+function combineDatatypes(operator, datatypes) {
+    //Error
+    if (datatypes.length !== 2) return { error: true, errorMsg: "Can't combine datatypes with amount " + datatypes.length, datatype: null };
+
+    return operations.combine(operator, datatypes[0], datatypes[1]);
+}
+
 function evaluate(node) {
     //evaluates and verifies a node recursively
+    //returns the datataype of the node or an errorMsg
     if (node === null) return null;
     if (node.isNode) {
         let identifier = node.getIdentifier();
@@ -79,53 +107,77 @@ function evaluate(node) {
         //Parenthesis
         if (identifier === 'ParenthesisNode') return evaluate(node.getContent())
 
+        //Other nodes
+        let nodeType = identifier.split(':')[0];
+        switch (nodeType) {
 
-        return { "evaluated": node.isFunctionNode };
-    }
-
-
-    /*switch (node.getIdentifier().split(':')[0]) {
-        case 'FunctionNode':
-            let functionName = node.getIdentifier().split(':')[1];
-
-            break;
-
-        case 'SymbolNode':
-            let symbolName = node.getIdentifier().split(':')[1];
-
-        default:
-            break;
-    }
-
-    node.traverse(function (node, path, parent) {
-        switch (node.type) {
-            case 'OperatorNode':
-                console.log(node.type, node.op)
-                break
             case 'ConstantNode':
-                console.log(node.type, node.value)
-                break
-            case 'SymbolNode':
-                console.log(node.type, node.name)
-                break
-            case 'FunctionNode':
-                console.log(node.type, node.name)
-                break
-            default:
-                console.log(node.type)
-        }
-    })*/
-}
+                let value = node.getContent().value;
+                let datatype = helpers.isNumeric(value);
+                //Error
+                if (datatype === null) return { error: true, errorMsg: "Not a numeric: " + value, datatype: null };
+                //Success
+                return { error: false, errorMsg: "", datatype: datatype };
 
-/*function getDatatype(expression) {
-    let node = parseRecursively(expression);
-    if (node === null) return null;
-    return evaluateDatatype(node);
-}*/
+            case 'SymbolNode':
+                return { error: false, errorMsg: "", datatype: "symbol" }; //TODO
+
+            case 'OperatorNode':
+                let args = node.getContent().args;
+                let datatypes = [];
+                let operator = node.getContent().fn;
+
+                //loop through arguments and get eachs arg datatype
+                for (var i = 0; i < args.length; i++) {
+                    let arg = args[i];
+                    let datatypeResponse = evaluate(arg);
+                    //Error
+                    if (datatypeResponse.error) return datatypeResponse;
+                    //Success
+                    datatypes.push(datatypeResponse.datatype);
+                }
+
+                return combineDatatypes(
+                    operator,
+                    datatypes
+                );
+
+            case 'FunctionNode':
+                //get function specifier
+                let fctNode = node.getContent().fn.getIdentifier();
+
+                //Function
+                if (fctNode === 'SymbolNode') {
+                    let functionName = identifier.split(':')[1];
+                    let spec = suggestibles.get('function', functionName);
+                    //Error
+                    if (spec === null) return { error: true, errorMsg: "Unknown function: " + functionName, datatype: null };
+                    //Success
+                    return { error: false, errorMsg: "", datatype: spec.returns.type };
+                }
+
+                //Method
+                else if (fctNode === 'AccessorNode') {
+                    let methodName = identifier.split(':')[1];
+                    let accessorNodeContent = node.getContent().fn.object;
+                    return getMethodDatatype(methodName, evaluate(accessorNodeContent));
+                }
+
+                //Error
+                else {
+                    return { error: true, errorMsg: "Unknown function node: " + fctNode, datatype: null };
+                }
+
+
+            default:
+                return { error: true, errorMsg: "Unprocessable nodeType: " + nodeType, datatype: null };
+        }
+    }
+}
 
 function getLetterBlock(expression, cursorPos) {
     //console.log('checking', expression);
-    //returns the letterblock the cursor is currently in
+    //returns the letterblock the cursor is currently in, e.g. 'tes|t' -> returns 'test' (where | = cursor)
     let patt = /[a-z]{1,20}/gm;
     let match = expression.match(patt);
     while (match = patt.exec(expression)) {
@@ -142,6 +194,7 @@ function getLetterBlock(expression, cursorPos) {
 }
 
 function insert(expression, suggestion, cursor) {
+    //insert a suggestion
     let splitExp = helpers.splitStringAtIndex(expression, cursor);
     let newExp = null;
     let cursorOffset = 0;

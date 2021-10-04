@@ -13,7 +13,7 @@ let archive = {
                 }
             ],
             returns: {
-                type: 'number',
+                type: 'float',
                 name: 'Absolute value'
             }
         },
@@ -31,7 +31,7 @@ let archive = {
                 }
             ],
             returns: {
-                type: 'number',
+                type: 'integer',
                 name: 'Rounded value'
             }
         },
@@ -49,7 +49,7 @@ let archive = {
                 }
             ],
             returns: {
-                type: 'number',
+                type: 'integer',
                 name: 'Rounded value'
             }
         },
@@ -73,7 +73,7 @@ let archive = {
                 },
             ],
             returns: {
-                type: 'number',
+                type: 'float',
                 name: 'Maximum of the two numbers'
             }
         },
@@ -97,7 +97,7 @@ let archive = {
                 },
             ],
             returns: {
-                type: 'number',
+                type: 'float',
                 name: 'Minimum of the two numbers'
             }
         },
@@ -131,7 +131,7 @@ let archive = {
         at: {
             name: 'at',
             description: 'Takes the value of a timeseries at the given point in time. Returns NaN/0/false if there is no datapoint and no predecessor',
-            datatypes: ['timeseries'],
+            on: ['timeseries'],
             args: [
                 {
                     type: 'integer',
@@ -141,7 +141,7 @@ let archive = {
                 }
             ],
             returns: {
-                type: ['number', 'bool'],
+                type: 'timeseriesentry', //['number', 'bool'],
                 name: 'Value of timeseries at defined point in time'
             }
         },
@@ -149,7 +149,7 @@ let archive = {
         slice: {
             name: 'slice',
             description: 'Slice a portion out of a timeseries',
-            datatypes: ['timeseries'],
+            on: ['timeseries'],
             args: [
                 {
                     type: 'integer',
@@ -186,9 +186,9 @@ function get(type, key) {
 function getList(type, filter = {}) {
     switch (type) {
         case 'functions':
-            var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*';
-            var contains = filter.hasOwnProperty('contains') ? filter.contains : null;
-            var tags = filter.hasOwnProperty('tags') ? filter.tags : [];
+            var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*'; //TODO
+            var contains = filter.hasOwnProperty('contains') ? filter.contains : null;//TODO
+            var tags = filter.hasOwnProperty('tags') ? filter.tags : [];//TODO
             let filteredFunctions = [];
             for (var key in archive.functions) {
                 let fc = archive.functions[key];
@@ -199,9 +199,9 @@ function getList(type, filter = {}) {
             return filteredFunctions;
 
         case 'methods':
-            var datatype = filter.hasOwnProperty('datatype') ? filter.datatype : 'timeseries';
-            var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*';
-            var contains = filter.hasOwnProperty('contains') ? filter.contains : null;
+            var datatype = filter.hasOwnProperty('datatype') ? filter.datatype : 'timeseries';//TODO
+            var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*';//TODO
+            var contains = filter.hasOwnProperty('contains') ? filter.contains : null;//TODO
             let filteredMethods = [];
             for (var key in archive.methods) {
                 let fc = archive.methods[key];

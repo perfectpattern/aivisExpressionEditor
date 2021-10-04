@@ -7,6 +7,20 @@ export const helpers = {
         return str.trim();
     },
 
+    isFloat: function (value) {
+        return !isNaN(value) && value.toString().indexOf('.') != -1;
+    },
+
+    isInteger: function (value) {
+        return !isNaN(value) && value.toString().indexOf('.') == -1;
+    },
+
+    isNumeric: function (value) {
+        if (this.isFloat(value)) return 'float';
+        if (this.isInteger(value)) return 'integer';
+        return null;
+    },
+
     parseDateString: function (string, settings) { //parseFormat = null, returnFormat = null
         let date = null;
         if (settings.parsingMode === 'auto') {
