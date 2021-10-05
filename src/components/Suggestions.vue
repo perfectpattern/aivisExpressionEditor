@@ -1,9 +1,9 @@
 <template>
-  <!--Functions-->
-  <div v-if="type === 'functions'" class="grid grid-cols-5 h-full">
+  <!--Functions, Methods-->
+  <div v-if="suggestions.type !== 'signals'" class="grid grid-cols-5 h-full">
     <div class="col-span-1 h-full overflow-y-auto bg-white">
       <div
-        v-for="(suggestion, index) in suggestions"
+        v-for="(suggestion, index) in suggestions.list"
         :key="suggestion.key"
         :ref="'suggested-item-' + index"
         class="px-4 py-1.5 cursor-default"
@@ -28,9 +28,9 @@
   </div>
 
   <!--Signals-->
-  <div v-if="type === 'signals'" class="h-full overflow-y-auto">
+  <div v-else class="h-full overflow-y-auto">
     <div
-      v-for="(signal, index) in suggestions"
+      v-for="(signal, index) in suggestions.list"
       :key="signal.id"
       :ref="'suggested-item-' + index"
       class="bg-white px-4 py-1.5 cursor-default grid grid-cols-5"
@@ -62,12 +62,8 @@ export default {
   },
 
   props: {
-    type: {
-      default: "functions", //functions | signals
-    },
-
     suggestions: {
-      defaul: [],
+      default: null,
     },
 
     selected: {
@@ -99,7 +95,9 @@ export default {
 
   computed: {
     selectedSuggestion() {
-      return this.suggestions === null ? null : this.suggestions[this.selected];
+      return this.suggestions === null
+        ? null
+        : this.suggestions.list[this.selected];
     },
   },
 
@@ -110,7 +108,6 @@ export default {
       this.timeout = setTimeout(
         function () {
           this.autoScrollIsBlocked = false;
-          console.log('cleared autoScrollIsBLocked');
         }.bind(this),
         500
       );

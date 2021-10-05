@@ -1,3 +1,10 @@
+/*
+    operations.js
+    Combines datatypoes based on a operator to get the resulting datatype
+    e.g. add(integer,double) = double
+    Validates at the same time
+*/
+
 let ops = {
     add: {
         float: {

@@ -1,18 +1,26 @@
-import { expressionHelpers } from "./expressionHelpers";
-import { suggestibles } from "./suggestibles";
-import { testSignals } from "./testSignals";
+/*
+    assistant.js
+    Receives the current expression and cursor position after every user input.
+    Identifies the current scope by cursor within expression and creates suggestions
+*/
 
-function insert(expression, suggestion, cursor) {
-    return expressionHelpers.insert(expression, suggestion, cursor);
-}
+import { expressionTools } from "./expressionTools";
+import { suggestibles } from "./suggestibles";
+import { signals } from "./signals";
+import { validator } from "./validator";
 
 function update(expression, cursorStart, cursorEnd, newInput) {
     //expression is empty
     if (expression.length == 0) {
         return {
+            error: false,
+            errorMsg: null,
+            successMsg: "Expression is null",
             currentFunction: null,
-            suggestions: suggestibles.getList('functions'),
-            requiredDataType: null,
+            suggestions: {
+                list: suggestibles.getList('functions'),
+                type: 'functions'
+            },
         };
     }
 
@@ -22,70 +30,142 @@ function update(expression, cursorStart, cursorEnd, newInput) {
     //get cursors lhs of expression
     let lhs = expression.substring(0, cursorPos).trim(); //get left hand side
 
-    //lhs of expression ends with operator
-    let operator = expressionHelpers.trailingOperator(lhs);
+    //lhs of expression ends with operator: Suggest functions returing dame datatype as lhs of operator
+    let operator = expressionTools.trailingOperator(lhs);
     if (operator !== null) {
         lhs = lhs.substring(0, lhs.length - operator.operator.length); //cut the operator from the end
-        let node = expressionHelpers.parseRecursively(lhs); //parse node recursively from expression
-        let evaluated = expressionHelpers.evaluate(node); //evaluate datatype
-        console.log(evaluated);
+        let node = expressionTools.parseRecursively(lhs); //parse node recursively from expression
+        let datatypeResponse = validator.evaluate(node); //evaluate datatype
+
+        //Error
+        if (datatypeResponse.error) {
+            return {
+                error: true,
+                errorMsg: datatypeResponse.errorMsg,
+                successMsg: null,
+                currentFunction: null,
+                suggestions: null,
+            };
+        }
+        //Success
         return {
+            error: false,
+            errorMsg: null,
+            successMsg: "Operator requests method with datatype " + datatypeResponse.datatype,
             currentFunction: null,
-            suggestions: suggestibles.getList('functions'),
-            requiredDataType: null,
+            suggestions: {
+                list: suggestibles.getList('functions'), //TODO: Filter by datatype
+                type: 'functions'
+            },
         };
     }
 
     //lhs of expression ends with dot
     if (lhs.substring(lhs.length - 1) === '.') {
         lhs = lhs.substring(0, lhs.length - 1);
-        let node = expressionHelpers.parseRecursively(lhs); //parse node recursively from expression
-        let evaluated = expressionHelpers.evaluate(node); //evaluate datatype
-        console.log(evaluated);
+        let node = expressionTools.parseRecursively(lhs); //parse node recursively from expression
+        let datatypeResponse = validator.evaluate(node); //evaluate datatype
+
+        //Error
+        if (datatypeResponse.error) {
+            return {
+                error: true,
+                errorMsg: datatypeResponse.errorMsg,
+                successMsg: null,
+                currentFunction: null,
+                suggestions: null,
+            };
+        }
+        //Success
         return {
+            error: false,
+            errorMsg: null,
+            successMsg: "Dot requests method with datatype " + datatypeResponse.datatype,
             currentFunction: null,
-            suggestions: suggestibles.getList('methods'),
-            requiredDataType: null,
+            suggestions: {
+                list: suggestibles.getList('methods'), //TODO: Filter by datatype
+                type: 'methods'
+            },
         };
     }
 
-    //cursor is inside a function or method name
-    var res = expressionHelpers.getLetterBlock(expression, cursorPos);
+    //cursor is inside a name of a function or method
+    var res = expressionTools.getLetterBlock(expression, cursorPos); //returns method or function
     if (res !== null) {
         let fct = suggestibles.get(res.type, res.key);
-        if (fct !== null) {  //check if function exists
+        //check if function/method exists
+        if (fct === null) {
+            //Error
+            return {
+                error: true,
+                errorMsg: res.type + " '" + res.key + "' is unknown.",
+                successMsg: null,
+                currentFunction: null,
+                suggestions: null,
+            }
+        } else {
+            //Success
             fct["currentArgument"] = -1;
             return {
-                currentFunction: fct,
+                error: false,
+                errorMsg: null,
+                successMsg: "Cursor is inside name of " + res.type + " " + res.key,
+                currentFunction: {
+                    spec: fct,
+                    type: res.type
+                },
                 suggestions: null,
-                requiredDataType: null,
             };
         }
     }
 
     //cursor is inside function or method parenthesis
-    var res = expressionHelpers.endsInsideFunctionParenthesis(lhs);
+    var res = expressionTools.endsInsideFunctionParenthesis(lhs);
     if (res !== null) {
-        let fct = suggestibles.get(res.type, res.key); //check if function exists
-        if (fct !== null) {
+        let fct = suggestibles.get(res.type, res.key);
+
+        //check if function/method exists
+        if (fct === null) {
+            //Error
+            return {
+                error: true,
+                errorMsg: res.type + " '" + res.key + "' is unknown.",
+                successMsg: null,
+                currentFunction: null,
+                suggestions: null,
+            }
+        }
+
+        else {
             fct["currentArgument"] = res.commas; //mark current argument
             let requiredDataType = res.commas < fct.args.length ? fct.args[res.commas].type : null;
+
             return {
-                currentFunction: fct,
-                suggestions: requiredDataType === 'signalid' ? testSignals.get() : suggestibles.getList('functions'),
-                requiredDataType: requiredDataType,
+                error: false,
+                errorMsg: null,
+                successMsg: "Requiring datatype " + requiredDataType,
+                currentFunction: {
+                    spec: fct,
+                    type: res.type
+                },
+                suggestions: {
+                    list: requiredDataType === 'signalid' ? signals.get() : suggestibles.getList('functions'),
+                    type: requiredDataType === 'signalid' ? 'signals' : 'functions'
+                }
             };
         }
     }
 
+    //nothing to do here
     return {
+        error: false,
+        errorMsg: null,
+        successMsg: "Nothing to do here",
         currentFunction: null,
         suggestions: null,
-        requiredDataType: null,
     };
 }
 
 export const assistant = {
     update: update,
-    insert: insert,
 }

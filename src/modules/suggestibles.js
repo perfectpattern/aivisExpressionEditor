@@ -1,3 +1,9 @@
+/*
+    suggestibles.js
+    Contains all avaibale functions and methods 
+    Provides filters and single 'get' on those lists
+*/
+
 let archive = {
     functions: {
         abs: {

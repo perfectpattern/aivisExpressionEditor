@@ -4,12 +4,13 @@
     <expression-input
       class="mb-2 w-full"
       v-model="expression"
-      :assistant="assistant"
+      :currentFunction="currentFunction"
+      :suggestions="suggestions"
       @update:modelValue="userInput"
       @focusout="resetAssistant"
     ></expression-input>
 
-    <div class="text-red-400 mb-2">{{ errorMsg }}</div>
+    <div class="text-red-400 mb-2">{{ errorMsgs.join("|") }}</div>
     <pre
       class="
         mb-2
@@ -34,7 +35,7 @@
         max-h-96
         overflow-y-auto
       "
-      >{{ JSON.stringify(evaluated, null, "\t") }}</pre
+      >{{ JSON.stringify(datatypeResponse, null, "\t") }}</pre
     >
   </div>
 </template>
@@ -43,7 +44,7 @@
 import ExpressionInput from "./components/ExpressionInput.vue";
 import { parse } from "mathjs";
 import { assistant } from "./modules/assistant";
-import { expressionHelpers } from "./modules/expressionHelpers";
+import { validator } from "./modules/validator";
 
 export default {
   name: "App",
@@ -52,14 +53,12 @@ export default {
   },
   data() {
     return {
-      expression: '(2/((1+s("sig_1", 1000))/2))', //'(2).abs(4)'
+      expression: "(2).abs(4)", // '(2/((1+s("sig_1", 1000))/2))', //
       node: {},
-      evaluated: {},
-      errorMsg: null,
-      assistant: {
-        currentFunction: null,
-        suggestions: null,
-      },
+      datatypeResponse: {},
+      errorMsgs: [],
+      currentFunction: null,
+      suggestions: null,
     };
   },
 
@@ -69,11 +68,15 @@ export default {
   },
 
   methods: {
+    //this method is called after any user input
     userInput(expr, cursorStart, cursorEnd, triggerType) {
       this.resetAssistant();
+      this.resetErrors();
+
+      //detect new input
       let newInput = triggerType === "input";
 
-      //detect input change
+      //react to input change
       if (newInput) this.analyzeExpression();
 
       //make suggestions
@@ -83,29 +86,46 @@ export default {
     analyzeExpression() {
       try {
         this.node = parse(this.expression);
-        this.evaluated = expressionHelpers.evaluate(this.node); //evaluate datatype
-        this.errorMsg = null;
+        this.datatypeResponse = validator.evaluate(this.node); //evaluate datatype
+        if (this.datatypeResponse.error)
+          this.errorMsgs.push(this.datatypeResponse.errorMsg);
       } catch (e) {
-        this.errorMsg = JSON.stringify(e.message);
+        this.errorMsgs.push(JSON.stringify(e.message));
         this.node = {};
-        this.evaluated = {};
+        this.datatypeResponse = {};
       }
     },
 
     updateAssistant(cursorStart = 0, cursorEnd = 0, newInput = false) {
-      this.assistant = assistant.update(
+      let assistantResult = assistant.update(
         this.expression,
         cursorStart,
         cursorEnd,
         newInput
       );
+
+      console.log(assistantResult.successMsg);
+
+      //Error
+      if (assistantResult.error) {
+        this.errorMsgs.push(assistantResult.errorMsg);
+        this.resetAssistant();
+      }
+
+      //Success
+      else {
+        this.currentFunction = assistantResult.currentFunction;
+        this.suggestions = assistantResult.suggestions;
+      }
     },
 
     resetAssistant() {
-      this.assistant = {
-        currentFunction: null,
-        suggestions: null,
-      };
+      this.currentFunction = null;
+      this.suggestions = null;
+    },
+
+    resetErrors() {
+      this.errorMsgs = [];
     },
   },
 };

@@ -1,7 +1,11 @@
-import { abs, ceil, floor } from 'mathjs';
+/*
+    utils.js
+    A set of usefull functions unrelated to any specific topic
+*/
+
 import moment from 'moment';
 
-export const helpers = {
+export const utils = {
     sanitizeString: function (str) {
         str = str.replace(/[^a-z0-9áéíóúñü \.,_-]/gim, "");
         return str.trim();

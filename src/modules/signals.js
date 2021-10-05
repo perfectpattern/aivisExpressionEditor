@@ -1,3 +1,8 @@
+/*
+    signals.js
+    reads in a metadata.json of signals to provide
+*/
+
 import json from '/test/metadata.json'
 
 function get() {
@@ -9,6 +14,6 @@ function get() {
     return (data);
 }
 
-export const testSignals = {
+export const signals = {
     get: get
 }

@@ -78,7 +78,7 @@
         >
           <pre
             class="text-gray-900"
-            v-html="getFunctionString(assistant.currentFunction)"
+            v-html="getFunctionString(currentFunction)"
           ></pre>
         </div>
 
@@ -91,8 +91,8 @@
         >
           <!--Documentation-->
           <documentation
-          class="p-4"
-            :fct="assistant.currentFunction"
+            class="p-4"
+            :fct="currentFunction.spec"
             :showFunctionString="false"
             v-if="mode === 'documentation'"
           />
@@ -100,12 +100,7 @@
           <!--Suggestions-->
           <suggestions
             v-if="mode === 'suggestions' || mode === 'argSuggestions'"
-            :suggestions="assistant.suggestions"
-            :type="
-              assistant.requiredDataType === 'signalid'
-                ? 'signals'
-                : 'functions'
-            "
+            :suggestions="suggestions"
             v-model:selected="selected"
             @selected="suggestionSelected"
           />
@@ -116,9 +111,9 @@
 </template>
 
 <script>
-import { assistant } from "../modules/assistant";
 import Documentation from "./Documentation.vue";
 import Suggestions from "./Suggestions.vue";
+import { expressionTools } from "/src/modules/expressionTools";
 
 export default {
   name: "ExpressionInput",
@@ -130,12 +125,13 @@ export default {
 
   props: {
     modelValue: String,
-    assistant: {
+    currentFunction: {
       type: Object,
-      default: {
-        currentFunction: null,
-        suggestions: null,
-      },
+      default: null,
+    },
+    suggestions: {
+      type: Object,
+      default: null,
     },
   },
 
@@ -151,23 +147,17 @@ export default {
 
   computed: {
     showAssistant() {
-      return (
-        this.assistant.suggestions !== null ||
-        this.assistant.currentFunction !== null
-      );
+      return this.suggestions !== null || this.currentFunction !== null;
     },
 
     splitHeight() {
-      return (
-        this.assistant.suggestions !== null &&
-        this.assistant.currentFunction !== null
-      );
+      return this.suggestions !== null && this.currentFunction !== null;
     },
 
     mode() {
       //can be hidden, suggestions, documentation, argSuggestions
-      let s = this.assistant.suggestions;
-      let f = this.assistant.currentFunction;
+      let s = this.suggestions;
+      let f = this.currentFunction;
       if (s === null && f === null) return "hidden";
       else if (s !== null && f === null) return "suggestions";
       else if (s === null && f !== null) return "documentation";
@@ -177,13 +167,13 @@ export default {
 
   methods: {
     arrowEvent(event, type) {
-      if (this.assistant.suggestions === null) return;
+      if (this.suggestions === null) return;
 
       //down arrow
       if (type === "down") {
         event.preventDefault();
         this.selected =
-          this.selected == this.assistant.suggestions.length - 1
+          this.selected == this.suggestions.list.length - 1
             ? this.selected
             : this.selected + 1;
       }
@@ -200,6 +190,7 @@ export default {
     },
 
     getFunctionString(fct) {
+      fct = fct.spec;
       //returns like "function parseInt(string: string, radix?: number): number"
       let activeArgument = fct.hasOwnProperty("currentArgument")
         ? fct.currentArgument
@@ -229,10 +220,14 @@ export default {
     },
 
     suggestionSelected() {
-      let suggestion = this.assistant.suggestions[this.selected];
+      let suggestion = this.suggestions.list[this.selected];
 
       //insert suggestion into expression
-      let inserted = assistant.insert(this.modelValue, suggestion, this.cursor);
+      let inserted = expressionTools.insert(
+        this.modelValue,
+        suggestion,
+        this.cursor
+      );
 
       //Set cursor
       this.cursor = inserted.cursor;
