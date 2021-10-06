@@ -23,7 +23,7 @@
       class="col-span-4 h-full p-4 overflow-y-auto text-sm bg-gray-100"
       v-if="selectedSuggestion !== null"
     >
-      <documentation :fct="selectedSuggestion" />
+      <documentation :func="selectedSuggestion" />
     </div>
   </div>
 
@@ -97,7 +97,10 @@ export default {
     selectedSuggestion() {
       return this.suggestions === null
         ? null
-        : this.suggestions.list[this.selected];
+        : {
+            spec: this.suggestions.list[this.selected],
+            type: this.suggestions.type,
+          };
     },
   },
 

@@ -1,17 +1,21 @@
 <template>
-  <div>
+  <div v-if="func !== null">
     <pre class="mb-2 text-gray-900" v-show="showFunctionString">{{
       functionString
     }}</pre>
 
     <div class="text-lg font-semibold mb-2">
-      {{ fct.name }}
+      {{ func.spec.name }}
     </div>
 
     <div class="mb-2">
-      {{ fct.description }}
+      {{ func.spec.description }}
     </div>
-    <div v-for="(arg, index) in fct.args" :key="'arg' + index" class="mb-2">
+    <div
+      v-for="(arg, index) in func.spec.args"
+      :key="'arg' + index"
+      class="mb-2"
+    >
       <em>@param</em> <span class="font-semibold">{{ arg.name }}</span
       >{{ arg.optional ? " (optional)" : "" }} -
       {{ arg.description }}
@@ -22,8 +26,8 @@
 <script>
 export default {
   props: {
-    fct: {
-      default: {},
+    func: {
+      default: null,
     },
     showFunctionString: {
       default: true,
@@ -32,20 +36,20 @@ export default {
 
   computed: {
     functionString() {
-      if (this.fct === null) return null;
+      if (this.func === null) return null;
       let arr = [];
-      this.fct.args.forEach((arg, index) => {
+      this.func.spec.args.forEach((arg, index) => {
         let argString = arg.name + (arg.optional ? "?" : "") + ": " + arg.type;
         arr.push(argString);
       });
       return (
-        this.fct.suggestionType +
+        this.func.type +
         " " +
-        this.fct.key +
+        this.func.spec.key +
         "(" +
         arr.join(", ") +
         "): " +
-        this.fct.returns.type
+        this.func.spec.returns.type
       );
     },
   },

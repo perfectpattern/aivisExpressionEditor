@@ -8,6 +8,7 @@ import { expressionTools } from "./expressionTools";
 import { suggestibles } from "./suggestibles";
 import { signals } from "./signals";
 import { validator } from "./validator";
+import { operations } from "./operations";
 
 function update(expression, cursorStart, cursorEnd, newInput) {
     //expression is empty
@@ -19,7 +20,8 @@ function update(expression, cursorStart, cursorEnd, newInput) {
             currentFunction: null,
             suggestions: {
                 list: suggestibles.getList('functions'),
-                type: 'functions'
+                type: 'functions',
+                options: {}
             },
         };
     }
@@ -30,10 +32,10 @@ function update(expression, cursorStart, cursorEnd, newInput) {
     //get cursors lhs of expression
     let lhs = expression.substring(0, cursorPos).trim(); //get left hand side
 
-    //lhs of expression ends with operator: Suggest functions returing dame datatype as lhs of operator
-    let operator = expressionTools.trailingOperator(lhs);
-    if (operator !== null) {
-        lhs = lhs.substring(0, lhs.length - operator.operator.length); //cut the operator from the end
+    //lhs of expression ends with operator: Suggest functions returing same datatype as lhs of operator
+    let operatorResponse = expressionTools.trailingOperator(lhs);
+    if (operatorResponse !== null && !expressionTools.checkInsideSignalId(lhs)) {
+        lhs = lhs.substring(0, lhs.length - operatorResponse.operator.length); //cut the operator from the end
         let node = expressionTools.parseRecursively(lhs); //parse node recursively from expression
         let datatypeResponse = validator.evaluate(node); //evaluate datatype
 
@@ -47,21 +49,38 @@ function update(expression, cursorStart, cursorEnd, newInput) {
                 suggestions: null,
             };
         }
-        //Success
+
+        //Success: got datatype
+        let allowedDatatypesResponse = operations.getAllowedDatatypes(operatorResponse.operatorString, datatypeResponse.datatype);
+        console.log(allowedDatatypesResponse);
+
+        //Error
+        if (allowedDatatypesResponse.error) {
+            return {
+                error: true,
+                errorMsg: allowedDatatypesResponse.errorMsg,
+                successMsg: null,
+                currentFunction: null,
+                suggestions: null,
+            };
+        }
+
+        //Success: got allowed datatypes
         return {
             error: false,
             errorMsg: null,
-            successMsg: "Operator requests method with datatype " + datatypeResponse.datatype,
+            successMsg: "Operator requests method with datatypes " + allowedDatatypesResponse.datatypes.join(","),
             currentFunction: null,
             suggestions: {
-                list: suggestibles.getList('functions'), //TODO: Filter by datatype
-                type: 'functions'
+                list: suggestibles.getList('functions', { returnTypes: allowedDatatypesResponse.datatypes }),
+                type: 'functions',
+                options: {}
             },
         };
     }
 
     //lhs of expression ends with dot
-    if (lhs.substring(lhs.length - 1) === '.') {
+    if (lhs.substring(lhs.length - 1) === '.' && !expressionTools.checkInsideSignalId(lhs)) {
         lhs = lhs.substring(0, lhs.length - 1);
         let node = expressionTools.parseRecursively(lhs); //parse node recursively from expression
         let datatypeResponse = validator.evaluate(node); //evaluate datatype
@@ -80,28 +99,51 @@ function update(expression, cursorStart, cursorEnd, newInput) {
         return {
             error: false,
             errorMsg: null,
-            successMsg: "Dot requests method with datatype " + datatypeResponse.datatype,
+            successMsg: "Dot requests method working on " + datatypeResponse.datatype,
             currentFunction: null,
             suggestions: {
-                list: suggestibles.getList('methods'), //TODO: Filter by datatype
-                type: 'methods'
+                list: suggestibles.getList('methods', { worksOn: datatypeResponse.datatype }),
+                type: 'methods',
+                options: {}
             },
         };
     }
 
     //cursor is inside a name of a function or method
     var res = expressionTools.getLetterBlock(expression, cursorPos); //returns method or function
-    if (res !== null) {
+    if (res !== null && !expressionTools.checkInsideSignalId(lhs)) {
         let fct = suggestibles.get(res.type, res.key);
         //check if function/method exists
         if (fct === null) {
-            //Error
-            return {
-                error: true,
-                errorMsg: res.type + " '" + res.key + "' is unknown.",
-                successMsg: null,
-                currentFunction: null,
-                suggestions: null,
+
+            //try 'contains' filter
+            let fcts = suggestibles.getList(res.type + "s", { contains: res.key });
+            console.log(fcts);
+            //Error: No matches
+            if (fcts.length == 0) {
+
+                return {
+                    error: true,
+                    errorMsg: res.type + " '" + res.key + "' is unknown.",
+                    successMsg: null,
+                    currentFunction: null,
+                    suggestions: null,
+                }
+            }
+
+            //Success
+            else {
+                return {
+                    error: false,
+                    errorMsg: null,
+                    successMsg: "Found matches containing " + res.key,
+                    currentFunction: null,
+                    suggestions: {
+                        list: fcts,
+                        type: res.type,
+                        options: { 'replace': { start: res.start, end: res.end } }
+                    }
+                }
             }
         } else {
             //Success
@@ -149,8 +191,9 @@ function update(expression, cursorStart, cursorEnd, newInput) {
                     type: res.type
                 },
                 suggestions: {
-                    list: requiredDataType === 'signalid' ? signals.get() : suggestibles.getList('functions'),
-                    type: requiredDataType === 'signalid' ? 'signals' : 'functions'
+                    list: requiredDataType === 'signalid' ? signals.get() : suggestibles.getList('functions', { returnType: requiredDataType }),
+                    type: requiredDataType === 'signalid' ? 'signals' : 'functions',
+                    options: {}
                 }
             };
         }

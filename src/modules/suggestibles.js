@@ -192,27 +192,59 @@ function get(type, key) {
 function getList(type, filter = {}) {
     switch (type) {
         case 'functions':
-            var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*'; //TODO
-            var contains = filter.hasOwnProperty('contains') ? filter.contains : null;//TODO
-            var tags = filter.hasOwnProperty('tags') ? filter.tags : [];//TODO
+            var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*';
+            var contains = filter.hasOwnProperty('contains') ? filter.contains : null;
+            var tags = filter.hasOwnProperty('tags') ? filter.tags : []; //TODO
             let filteredFunctions = [];
             for (var key in archive.functions) {
                 let fc = archive.functions[key];
                 fc['key'] = key;
-                fc['suggestionType'] = 'function';
+
+                //filter 'contains'
+                if (contains !== null && key.indexOf(contains) == -1) continue;
+
+                //filter returnType
+                if (returnType !== "*") {
+                    //special case
+                    if (returnType === 'number') {
+                        if (!['integer', 'float'].includes(fc.returns.type)) continue;
+                    }
+
+                    //default
+                    else {
+                        if (fc.returns.type !== returnType) continue;
+                    }
+                }
+
+                //add entry
                 filteredFunctions.push(fc);
             }
             return filteredFunctions;
 
         case 'methods':
-            var datatype = filter.hasOwnProperty('datatype') ? filter.datatype : 'timeseries';//TODO
-            var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*';//TODO
-            var contains = filter.hasOwnProperty('contains') ? filter.contains : null;//TODO
+            var datatype = filter.hasOwnProperty('datatype') ? filter.datatype : 'timeseries'; //TODO
+            var returnType = filter.hasOwnProperty('returnType') ? filter.returnType : '*';
+            var returnTypes = filter.hasOwnProperty('returnTypes') ? filter.returnTypes : null;
+            var worksOn = filter.hasOwnProperty('worksOn') ? filter.worksOn : null;
+            var contains = filter.hasOwnProperty('contains') ? filter.contains : null;
             let filteredMethods = [];
             for (var key in archive.methods) {
                 let fc = archive.methods[key];
                 fc['key'] = key;
-                fc['suggestionType'] = 'method';
+
+                //filter 'contains'
+                if (contains !== null && key.indexOf(contains) == -1) continue;
+
+                //filter returnType
+                if (returnType !== "*" && fc.returns.type !== returnType) continue;
+
+                //filter returnTypes
+                if (returnTypes !== null && !returnTypes.includes(fc.returns.type)) continue;
+
+                //filter worksOn
+                if (worksOn !== null && !fc.on.includes(worksOn)) continue;
+
+                //add entry
                 filteredMethods.push(fc);
             }
             return filteredMethods;
@@ -220,6 +252,7 @@ function getList(type, filter = {}) {
         case 'array':
             break;
         default:
+            console.log('Error: Wrong type ' + type);
             break;
     }
 }

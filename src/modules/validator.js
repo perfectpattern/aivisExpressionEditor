@@ -35,7 +35,7 @@ function combineDatatypes(operator, datatypes) {
 function evaluate(node) {
     //evaluates and verifies a node recursively
     //returns the datataype of the node or an errorMsg
-    if (node === null) return null;
+    if (node === null) return { error: true, errorMsg: "No valid expression", datatype: null };
     if (node.isNode) {
         let identifier = node.getIdentifier();
 
@@ -108,6 +108,7 @@ function evaluate(node) {
                 return { error: true, errorMsg: "Unprocessable nodeType: " + nodeType, datatype: null };
         }
     }
+    return { error: true, errorMsg: "No valid expression", datatype: null };
 }
 
 export const validator = {

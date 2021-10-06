@@ -92,6 +92,19 @@ function combine(operator, datatype1, datatype2) {
     else return { error: true, errorMsg: "Unprocessable operator: " + operator, datatype: null }
 }
 
+function getAllowedDatatypes(operator, datatype1) {
+    if (ops.hasOwnProperty(operator)) {
+        if (ops[operator].hasOwnProperty(datatype1)) {
+            return { error: false, errorMsg: "", datatypes: Object.keys(ops[operator][datatype1]) }
+        }
+        //Error
+        else return { error: true, errorMsg: "Datatype '" + datatype1 + "'no allowed for operator '" + operator + "'", datatypes: [] }
+    }
+    //Error
+    else return { error: true, errorMsg: "Unprocessable operator: " + operator, datatypes: [] }
+}
+
 export const operations = {
-    combine: combine
+    combine: combine,
+    getAllowedDatatypes: getAllowedDatatypes
 };

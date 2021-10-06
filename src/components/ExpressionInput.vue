@@ -3,6 +3,7 @@
     <!--Blocking layer-->
     <div
       v-show="showAssistant"
+      ref="layer"
       class="fixed left-0 top-0 h-full w-full z-10 bg-black bg-opacity-50"
       @click="$emit('focusout')"
     ></div>
@@ -33,10 +34,14 @@
       @keydown.down="arrowEvent($event, 'down')"
       @keydown.up="arrowEvent($event, 'up')"
       @keydown.enter="suggestionSelected"
+      @keydown.esc="unfocus"
     />
     <div class="text-gray-400 text-xs font-semibold absolute right-1 -top-6">
       Cursor position: {{ cursor }}
     </div>
+
+    <!--Fake iput to focus on on unfocus-->
+    <input ref="fake" class="opacity-0" />
 
     <!--Assistant-->
     <transition
@@ -78,7 +83,9 @@
         >
           <pre
             class="text-gray-900"
-            v-html="getFunctionString(currentFunction)"
+            v-html="
+              getFunctionString(currentFunction.spec, currentFunction.type)
+            "
           ></pre>
         </div>
 
@@ -92,7 +99,7 @@
           <!--Documentation-->
           <documentation
             class="p-4"
-            :fct="currentFunction.spec"
+            :func="currentFunction"
             :showFunctionString="false"
             v-if="mode === 'documentation'"
           />
@@ -189,44 +196,21 @@ export default {
       console.log("down");
     },
 
-    getFunctionString(fct) {
-      fct = fct.spec;
-      //returns like "function parseInt(string: string, radix?: number): number"
-      let activeArgument = fct.hasOwnProperty("currentArgument")
-        ? fct.currentArgument
-        : -1;
-      let boldFunction =
-        fct.hasOwnProperty("currentArgument") && activeArgument == -1;
-
-      //create string
-      let arr = [];
-      fct.args.forEach((arg, index) => {
-        let argString = arg.name + (arg.optional ? "?" : "") + ": " + arg.type;
-        arr.push(
-          index == activeArgument ? "<b>" + argString + "</b>" : argString
-        );
-      });
-      return (
-        (boldFunction ? "<b>" : "") +
-        fct.suggestionType +
-        " " +
-        fct.key +
-        (boldFunction ? "</b>" : "") +
-        "(" +
-        arr.join(", ") +
-        "): " +
-        fct.returns.type
-      );
+    getFunctionString(spec, type) {
+      return expressionTools.createFunctionString(spec, type);
     },
 
     suggestionSelected() {
+      if(this.suggestions === null) return;
       let suggestion = this.suggestions.list[this.selected];
 
       //insert suggestion into expression
       let inserted = expressionTools.insert(
         this.modelValue,
         suggestion,
-        this.cursor
+        this.cursor,
+        this.suggestions.type,
+        this.suggestions.options
       );
 
       //Set cursor
@@ -275,6 +259,11 @@ export default {
         $event.target.selectionEnd,
         trigger
       );
+    },
+
+    unfocus() {
+      this.$refs["layer"].click();
+      this.$refs["fake"].focus();
     },
   },
 };

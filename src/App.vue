@@ -53,7 +53,7 @@ export default {
   },
   data() {
     return {
-      expression: "(2).abs(4)", // '(2/((1+s("sig_1", 1000))/2))', //
+      expression: "", //"(2).abs(4)", // '(2/((1+s("sig_1", 1000))/2))', //
       node: {},
       datatypeResponse: {},
       errorMsgs: [],
@@ -73,14 +73,11 @@ export default {
       this.resetAssistant();
       this.resetErrors();
 
-      //detect new input
-      let newInput = triggerType === "input";
-
       //react to input change
-      if (newInput) this.analyzeExpression();
+      this.analyzeExpression();
 
       //make suggestions
-      this.updateAssistant(cursorStart, cursorEnd, newInput);
+      this.updateAssistant(cursorStart, cursorEnd, triggerType === "input");
     },
 
     analyzeExpression() {
@@ -105,6 +102,7 @@ export default {
       );
 
       console.log(assistantResult.successMsg);
+      //console.log(assistantResult);
 
       //Error
       if (assistantResult.error) {
