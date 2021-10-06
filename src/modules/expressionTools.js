@@ -41,7 +41,7 @@ function checkInsideParenthesis(expression, checkForFunction = true) {
         let leadingExpression = expression.substring(0, pos - 1);
 
         //skip white space
-        if (character === " ") continue;
+        //if (character === " ") continue;
 
         //Add ')'
         if (character === ")") parenthesisBalance++;

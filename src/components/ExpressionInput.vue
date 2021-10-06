@@ -1,5 +1,5 @@
 <template>
-  <div class="relative inline-block text-left mb-12">
+  <div class="relative inline-block text-left mb-10">
     <!--Blocking layer-->
     <div
       v-show="showAssistant"

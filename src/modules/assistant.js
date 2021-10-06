@@ -52,7 +52,7 @@ function update(expression, cursorStart, cursorEnd, newInput) {
 
         //Success: got datatype
         let allowedDatatypesResponse = operations.getAllowedDatatypes(operatorResponse.operatorString, datatypeResponse.datatype);
-        console.log(allowedDatatypesResponse);
+        //console.log(allowedDatatypesResponse);
 
         //Error
         if (allowedDatatypesResponse.error) {

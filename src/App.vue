@@ -2,7 +2,7 @@
   <div class="p-5 h-screen mx-auto max-w-4xl">
     <div class="text-blue-400 font-bold mb-2">aivis Formula Editor</div>
     <expression-input
-      class="mb-2 w-full"
+      class="w-full"
       v-model="expression"
       :currentFunction="currentFunction"
       :suggestions="suggestions"
@@ -10,8 +10,13 @@
       @focusout="resetAssistant"
     ></expression-input>
 
-    <div class="text-red-400 mb-2">{{ errorMsgs.join("|") }}</div>
+    <div class="text-red-400">
+      <div v-for="(errorMsg, index) in errorMsgs" :key="index">
+        {{ errorMsg.replace('"', "").replace('"', "") }}
+      </div>
+    </div>
     <pre
+      v-if="mode === 'dev'"
       class="
         mb-2
         bg-white
@@ -25,6 +30,7 @@
       >{{ JSON.stringify(node, null, "\t") }}</pre
     >
     <pre
+      v-if="mode === 'dev'"
       class="
         mb-2
         bg-white
@@ -53,18 +59,19 @@ export default {
   },
   data() {
     return {
-      expression: "", //"(2).abs(4)", // '(2/((1+s("sig_1", 1000))/2))', //
+      expression: "", //"(2).abs(4)", // '(2/((1+s("sig_1",1000))/2))', //
       node: {},
       datatypeResponse: {},
       errorMsgs: [],
       currentFunction: null,
       suggestions: null,
+      mode: "prod", //dev, prod
     };
   },
 
   created() {
     this.analyzeExpression(this.expression);
-    this.updateAssistant();
+    //this.updateAssistant();
   },
 
   methods: {
@@ -81,6 +88,7 @@ export default {
     },
 
     analyzeExpression() {
+      if (this.expression.length == 0) return;
       try {
         this.node = parse(this.expression);
         this.datatypeResponse = validator.evaluate(this.node); //evaluate datatype
@@ -101,7 +109,7 @@ export default {
         newInput
       );
 
-      console.log(assistantResult.successMsg);
+      if (this.mode === "dev") console.log(assistantResult.successMsg);
       //console.log(assistantResult);
 
       //Error
@@ -113,7 +121,12 @@ export default {
       //Success
       else {
         this.currentFunction = assistantResult.currentFunction;
-        this.suggestions = assistantResult.suggestions;
+        this.suggestions =
+          assistantResult.suggestions === null
+            ? null
+            : assistantResult.suggestions.list.length > 0
+            ? assistantResult.suggestions
+            : null;
       }
     },
 

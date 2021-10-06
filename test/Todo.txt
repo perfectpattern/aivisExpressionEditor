@@ -1,1 +1,5 @@
-- Alle Methoden/Funktionen müssen ordnungsgemäß befüllt sein
+- Validation:
+    - Verify, that all methods work on their associated datatype
+    - Verify, all methods and functions are filled correctly
+    - Expression Datatype need to be timeseries
+    - Verify, that all signalIDs are correct

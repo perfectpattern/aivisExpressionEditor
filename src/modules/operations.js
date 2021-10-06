@@ -83,10 +83,10 @@ function combine(operator, datatype1, datatype2) {
                 return { error: false, errorMsg: "", datatype: ops[operator][datatype1][datatype2] }
             }
             //Error
-            else return { error: true, errorMsg: "Datatype '" + datatype2 + "'no allowed for operator '" + operator + "' and datatype '" + datatype1 + "'", datatype: null }
+            else return { error: true, errorMsg: "Datatype '" + datatype2 + "' not allowed for operator '" + operator + "' and datatype '" + datatype1 + "'", datatype: null }
         }
         //Error
-        else return { error: true, errorMsg: "Datatype '" + datatype1 + "'no allowed for operator '" + operator + "'", datatype: null }
+        else return { error: true, errorMsg: "Datatype '" + datatype1 + "' not allowed for operator '" + operator + "'", datatype: null }
     }
     //Error
     else return { error: true, errorMsg: "Unprocessable operator: " + operator, datatype: null }
@@ -98,7 +98,7 @@ function getAllowedDatatypes(operator, datatype1) {
             return { error: false, errorMsg: "", datatypes: Object.keys(ops[operator][datatype1]) }
         }
         //Error
-        else return { error: true, errorMsg: "Datatype '" + datatype1 + "'no allowed for operator '" + operator + "'", datatypes: [] }
+        else return { error: true, errorMsg: "Datatype '" + datatype1 + "' not allowed for operator '" + operator + "'", datatypes: [] }
     }
     //Error
     else return { error: true, errorMsg: "Unprocessable operator: " + operator, datatypes: [] }
