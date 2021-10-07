@@ -168,11 +168,24 @@ function insert(expression, suggestion, cursor, type, options = {}) {
     }
 }
 
+function parseCustom(expression) {
+    if (expression.length == 0) return null;
+
+    //alter the expression to use mathjs.parse on it
+    //TODO: replace '!expression' by 'not(expression)'
+
+    try {
+        return parse(expression);
+    } catch (e) {
+        throw e;
+    }
+}
+
 function parseRecursively(expression) {
     //trys parsing the expression recursively, removing the first character each time
     if (expression.length == 0) return null;
     try {
-        return parse(expression);
+        return parseCustom(expression);
     } catch (e) {
         return parseRecursively(expression.substring(1));
     }
@@ -188,7 +201,24 @@ function operatorToString(operator) {
             return 'multiply';
         case "/":
             return 'divide';
+        case "<":
+            return 'smaller';
+        case ">":
+            return 'larger';
+        case "<=":
+            return 'smallerEq';
+        case ">=":
+            return 'largerEq';
+        case "&":
+            return 'bitAnd';
+        case "|":
+            return 'bitOr';
+        case "==":
+            return 'equal';
+        case "!=":
+            return 'unequal';
         default:
+            console.log('ERROR: undefined operator ' + operator);
             return null;
     }
 }
@@ -206,7 +236,7 @@ function trailingOperator(expression) {
     }
 
     //boolean operators
-    match = expression.match(/&&|[<>!=]=|[<>&!]|\|{1,2}$/); //.match(/and|x?or|&&|[<>!=]=|[<>&!]|\|{1,2}$/);
+    match = expression.match(/(&&|[<>!=]=|[<>&!]|\|)$/); //.match(/and|x?or|&&|[<>!=]=|[<>&!]|\|{1,2}$/);
     if (match) return {
         type: 'boolean',
         operator: match[0],
@@ -251,6 +281,7 @@ export const expressionTools = {
     createFunctionString: createFunctionString,
     endsInsideFunctionParenthesis: endsInsideFunctionParenthesis,
     parseRecursively: parseRecursively,
+    parseCustom: parseCustom,
     getLetterBlock: getLetterBlock,
     insert: insert,
     trailingOperator: trailingOperator,

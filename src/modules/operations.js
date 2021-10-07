@@ -74,6 +74,124 @@ let ops = {
             timeseries: 'timeseries',
         }
     },
+    smaller: {
+        float: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        integer: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        timeseries: {
+            float: 'timeseries',
+            integer: 'timeseries',
+            timeseries: 'timeseries',
+        }
+    },
+    larger: {
+        float: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        integer: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        timeseries: {
+            float: 'timeseries',
+            integer: 'timeseries',
+            timeseries: 'timeseries',
+        }
+    },
+    smallerEq: {
+        float: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        integer: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        timeseries: {
+            float: 'timeseries',
+            integer: 'timeseries',
+            timeseries: 'timeseries',
+        }
+    },
+    largerEq: {
+        float: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        integer: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        timeseries: {
+            float: 'timeseries',
+            integer: 'timeseries',
+            timeseries: 'timeseries',
+        }
+    },
+    bitAnd: {
+        boolean: {
+            boolean: 'boolean',
+        },
+        timeseries: {
+            timeseries: 'timeseries'
+        }
+    },
+    bitOr: {
+        boolean: {
+            boolean: 'boolean',
+        },
+        timeseries: {
+            timeseries: 'timeseries'
+        }
+    },
+    equal: {
+        float: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        integer: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        timeseries: {
+            float: 'timeseries',
+            integer: 'timeseries',
+            timeseries: 'timeseries',
+        }
+    },
+    unequal: {
+        float: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        integer: {
+            float: 'boolean',
+            integer: 'boolean',
+            timeseries: 'timeseries',
+        },
+        timeseries: {
+            float: 'timeseries',
+            integer: 'timeseries',
+            timeseries: 'timeseries',
+        }
+    },
 };
 
 function combine(operator, datatype1, datatype2) {

@@ -48,7 +48,7 @@
 
 <script>
 import ExpressionInput from "./components/ExpressionInput.vue";
-import { parse } from "mathjs";
+import { expressionTools } from "./modules/expressionTools";
 import { assistant } from "./modules/assistant";
 import { validator } from "./modules/validator";
 
@@ -59,7 +59,7 @@ export default {
   },
   data() {
     return {
-      expression: "", //"(2).abs(4)", // '(2/((1+s("sig_1",1000))/2))', //
+      expression: "", //"(2).abs(4)", // '(2/((1+s("sig_1", 1000))/2))', //
       node: {},
       datatypeResponse: {},
       errorMsgs: [],
@@ -70,8 +70,10 @@ export default {
   },
 
   created() {
-    this.analyzeExpression(this.expression);
-    //this.updateAssistant();
+    if (this.mode === "dev") {
+      this.analyzeExpression(this.expression);
+      this.updateAssistant();
+    }
   },
 
   methods: {
@@ -84,14 +86,18 @@ export default {
       this.analyzeExpression();
 
       //make suggestions
-      this.updateAssistant(cursorStart, cursorEnd, triggerType === "input");
+      this.updateAssistant(cursorEnd);
     },
 
     analyzeExpression() {
       if (this.expression.length == 0) return;
       try {
-        this.node = parse(this.expression);
-        this.datatypeResponse = validator.evaluate(this.node); //evaluate datatype
+        this.node = expressionTools.parseCustom(this.expression);
+
+        //evaluate datatype
+        this.datatypeResponse = validator.evaluate(this.node);
+
+        //Error
         if (this.datatypeResponse.error)
           this.errorMsgs.push(this.datatypeResponse.errorMsg);
       } catch (e) {
@@ -101,13 +107,8 @@ export default {
       }
     },
 
-    updateAssistant(cursorStart = 0, cursorEnd = 0, newInput = false) {
-      let assistantResult = assistant.update(
-        this.expression,
-        cursorStart,
-        cursorEnd,
-        newInput
-      );
+    updateAssistant(cursorPos = 0) {
+      let assistantResult = assistant.update(this.expression, cursorPos);
 
       if (this.mode === "dev") console.log(assistantResult.successMsg);
       //console.log(assistantResult);

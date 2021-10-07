@@ -27,7 +27,7 @@ function getMethodDatatype(methodKey, datatypeResponse) {
 
 function combineDatatypes(operator, datatypes) {
     //Error
-    if (datatypes.length !== 2) return { error: true, errorMsg: "Can't combine datatypes with amount " + datatypes.length, datatype: null };
+    if (datatypes.length !== 2) return { error: true, errorMsg: "Can't combine datatypes with amount " + datatypes.length, got: datatypes.join(","), datatype: null };
 
     return operations.combine(operator, datatypes[0], datatypes[1]);
 }

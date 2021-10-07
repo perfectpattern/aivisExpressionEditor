@@ -3,3 +3,12 @@
     - Verify, all methods and functions are filled correctly
     - Expression Datatype need to be timeseries
     - Verify, that all signalIDs are correct
+
+/- Boolsche Operatoren
+- ! einbauen
+- Funktion: Summe
+- Functionen und Methoden ergänzen
+- Suggestions-Dropdown: Einteilen nach Kategorien, timeseries ganz oben
+- Funktion, die gehen muss:: 
+    - s('a') < 97 & !(s('a') > 79 | s('b') > 80)
+- Bug: Cursor inside '!=' ->trys to interpret ! as an opertar, throws error
